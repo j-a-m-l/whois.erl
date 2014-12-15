@@ -1,0 +1,14 @@
+{application, whois,
+ [
+  {description, "An Erlang whois library"},
+  {vsn, "1"},
+  {modules, [
+             whois
+            ]},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {env, []}
+ ]}.
