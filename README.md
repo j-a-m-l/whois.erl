@@ -17,12 +17,13 @@ Installation
 API
 ===
 
+TODO async...
 ```erlang
-TlRecord = whois:lookup('domain.com').
+TlRecord = whois:lookup("domain.com").
 ```
 
 ```erlang
-TldRecord = whois:lookup('sub.domain.com').
+TldRecord = whois:lookup(<<"sub.domain.com">>).
 ```
 
 TldRecord

@@ -1,14 +1,13 @@
-{application, whois,
- [
-  {description, "An Erlang WHOIS library"},
-  {vsn, "1"},
-  {modules, [
-             whois
-            ]},
-  {registered, []},
-  {applications, [
-                  kernel,
-                  stdlib
-                 ]},
-  {env, []}
- ]}.
+{application, whois, [
+	{description, "An Erlang WHOIS library"},
+	{vsn, "0.1.0"},
+	{id, "git"},
+	{modules, []},
+	{registered, []},
+	{applications, [
+		kernel,
+		stdlib
+	]},
+	{mod, {whois_app, []}},
+	{env, []}
+]}.
