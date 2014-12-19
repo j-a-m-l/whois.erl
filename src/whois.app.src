@@ -1,6 +1,6 @@
 {application, whois,
  [
-  {description, "An Erlang whois library"},
+  {description, "An Erlang WHOIS library"},
   {vsn, "1"},
   {modules, [
              whois

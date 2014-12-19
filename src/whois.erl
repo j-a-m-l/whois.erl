@@ -6,6 +6,13 @@
 -define(DEFAULT_OPS, [{port, 43}, {timeout, 12000}]).
 -define(TLD_RE, <<"^.+(\\..+)$">>).
 
+-record(tld, {
+        tld,
+        domain,
+        subdomains = [],
+        available = unknown,
+       })
+
 %% TODO
 init() ->
     {ok, TldRe} = re:compile(?TLD_RE),
