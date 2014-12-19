@@ -1,3 +1,3 @@
--name whois.erl@127.0.0.1
--setcookie whois.erl
+-name whois@127.0.0.1
+-setcookie whois
 -heart
