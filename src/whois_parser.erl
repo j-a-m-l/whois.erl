@@ -1,4 +1,5 @@
 %% @doc 
+%% TODO example.com and special domains
 -module(whois_parser).
 -include_lib("../include/whois.hrl").
 
@@ -51,6 +52,7 @@ loop() ->
             loop()
     end.
 
+%% .com
 -define(NAME_RE, <<"^\s*Domain Name:\s*([a-z\\d\\-\\.]+)$">>).
 extract_name(Data) ->
     {ok, NameRe} = re:compile(?NAME_RE, [caseless]),
@@ -62,13 +64,7 @@ extract_name(Data) ->
 %% -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 
--define(setup(F), {setup, fun set_up/0, fun tear_down/1, F}).
-
-set_up() ->
-    ?MODULE:start().
-
-tear_down(_) ->
-    ?MODULE:stop().
+-define(setup(F), {setup, fun() -> start() end, stop() end, F}).
 
 server_test_() ->
     [{"The server is started with a registered name at the beginning",

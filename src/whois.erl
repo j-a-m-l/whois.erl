@@ -4,20 +4,18 @@
 -export([lookup/1, lookup/2]).
 
 -define(DEFAULT_OPS, [{port, 43}, {timeout, 12000}]).
--define(TLD_RE, <<"^.+(\\..+)$">>).
 
-%% -record(tld, {
-%%         tld,
-%%         domain,
-%%         subdomains = [],
-%%         available = unknown
-%%        }).
+%% RFC 3912 indicates that the request must end with ASCII CR and ASCII LF
+-define(REQUEST_END, <<"\r\n">>).
+
+-define(TLD_RE, <<"^.+(\\..+)$">>).
 
 %% TODO
 init() ->
     {ok, TldRe} = re:compile(?TLD_RE),
     [TldRe].
 
+%% -spec lookup(binary()) -> {ok, Response}.
 lookup(Domain) ->
     lookup(list_to_binary(Domain), []).
 lookup(Domain, Ops) when is_binary(Domain), is_list(Ops) ->
@@ -63,10 +61,10 @@ request(Url, Domain, Ops) when is_list(Url) ->
     %% send_timeout configures gen_tcp:send 
     case gen_tcp:connect(Url, Port, [binary, {active, false}, {packet, 0}, {send_timeout, Timeout}], Timeout) of
         {ok, Sock} ->
-            %% It requires \r\n
-            ok = gen_tcp:send(Sock, list_to_binary([Domain, <<"\r\n">>])),
+            ok = gen_tcp:send(Sock, list_to_binary([Domain, ?REQUEST_END])),
             Response = recv(Sock),
             ok = gen_tcp:close(Sock),
+            save(binary_to_list(Domain), Response),
             {ok, Response};
         {error, Reason} ->
             {error, Reason}
@@ -85,18 +83,23 @@ recv(Sock, Acc) ->
 response(Response, _Ops) ->
     io:format("Response: ~s~n", [Response]).
 
+save(File, Data) ->
+    {ok, Descriptor} = file:open(["../test/data/" | File], [raw, write]),
+    file:write(Descriptor, Data),
+    file:close(Descriptor). 
 
-%% -ifdef(TEST).
+
+-ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 
-extract_tld_test() ->
-    ?assertEqual(<<".org">>, extract_tld(<<"lol.org">>)),
-    ?assertEqual(<<".com">>, extract_tld(<<"example.com">>)).
+extract_tld_test_() ->
+    [?_assertEqual(<<".org">>, extract_tld(<<"lol.org">>)),
+     ?_assertEqual(<<".com">>, extract_tld(<<"example.com">>))].
 
 get_tld_url_test() ->
-    ?assertEqual(<<"whois.crsnic.net">>, get_tld_url(<<".org">>)).
+    ?assertEqual(<<"whois.crsnic.net">>, get_tld_url(<<".com">>)).
 
-%% -endif.
+-endif.
 
 
 -ifdef(PERF).
