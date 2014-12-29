@@ -3,9 +3,9 @@
         {<<".br">>, <<"whois.nic.br">>},
         {<<".com">>, <<"whois.crsnic.net">>},
         {<<".mx">>, <<"whois.nic.mx">>},
-        {<<".name">>, <<"whois.nic.name">>},
+        {<<".name">>, <<"whois.nic.name">>, verisign},
         {<<".net">>, <<"whois.crsnic.net">>},
         {<<".no">>, <<"whois.norid.no">>},
         {<<".org">>, <<"whois.publicinterestregistry.net">>},
-        {<<".ua">>, <<"whois.net.ua">>}
+        {<<".ua">>, <<"whois.net.ua">>, eunic}
     ]).

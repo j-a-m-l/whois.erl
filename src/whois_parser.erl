@@ -8,11 +8,11 @@
 %% Is necessary exporting this function for being able to trigger it after spawning a process
 -export([init/1]).
 
--define(DEFAULT_OPS, [{parser, colon}]).
--define(TIMEOUT, 10000).
+-define(DEFAULT_OPS, []).
+-define(TIMEOUT, 1000).
 
 start() ->
-    register(?MODULE, spawn(?MODULE, init, [self()])),
+    register(?MODULE, spawn_link(?MODULE, init, [self()])),
     receive
         started -> ok
     after
@@ -47,19 +47,16 @@ loop() ->
     receive
         {request, From, stop} ->
             reply(From, ok);
-        {request, From, {parse, Data, [{parser, Parser}]}} ->
-            %% [parser_ | Parser],
-            reply(From, extract_name(Data)),
+        {request, From, {parse, Data, _Ops}} ->
+            %% TODO
+            Parser = "com",
+            reply(From, process(Parser, Data)),
             loop()
     end.
 
-%% .com
--define(NAME_RE, <<"^\s*Domain Name:\s*([a-z\\d\\-\\.]+)$">>).
-extract_name(Data) ->
-    {ok, NameRe} = re:compile(?NAME_RE, [caseless]),
-    {match, [Name]} = re:run(Data, NameRe, [{capture, [1], binary}]),
-    string:to_lower(binary_to_list(Name)).
-
+process(Parser, Data) ->
+    Module = list_to_existing_atom(string:concat(Parser, "_parser")),
+    Module:parse(Data).
 
 
 %% -ifdef(TEST).

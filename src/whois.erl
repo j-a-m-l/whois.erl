@@ -13,7 +13,7 @@
 %% TODO start, stop, etc.
 
 init() ->
-    whois_parser:start(),
+    ok = whois_parser:start(),
     {ok, TldRe} = re:compile(?TLD_RE),
     [TldRe].
 
@@ -23,7 +23,7 @@ lookup(Domain) ->
 lookup(Domain, Ops) when is_binary(Domain), is_list(Ops) ->
     Tld = extract_tld(Domain),
     Url = get_tld_url(Tld),
-    case whois_serve:request(binary_to_list(Url), Domain, merge_options(Ops)) of
+    case whois_server:request(binary_to_list(Url), Domain, merge_options(Ops)) of
         {ok, Response} ->
             response(Domain, Response, Ops);
         {error, Reason} ->
@@ -54,7 +54,8 @@ response(_Domain, Response, _Ops) ->
     Parsed = whois_parser:parse(Response),
     whois_parser:stop(),
     save(binary_to_list(_Domain), Response),
-    io:format("Response: ~s~n", [Parsed]).
+    io:format("Response: ~s~n", [Response]),
+    io:format("Parsed: ~s~n", [Parsed]).
 
 save(File, Data) ->
     {ok, Fd} = file:open([?TEST_DATA_PATH | File], [raw, write]),
