@@ -8,7 +8,7 @@
 %% Is necessary exporting this function for being able to trigger it after spawning a process
 -export([init/1]).
 
--define(DEFAULT_OPS, []).
+-define(DEFAULT_OPS, [{parser, colon}]).
 -define(TIMEOUT, 10000).
 
 start() ->
@@ -16,7 +16,7 @@ start() ->
     receive
         started -> ok
     after
-        ?TIMEOUT  -> {error, starting}
+        ?TIMEOUT -> {error, starting}
     end.
 
 stop() ->
@@ -47,7 +47,8 @@ loop() ->
     receive
         {request, From, stop} ->
             reply(From, ok);
-        {request, From, {parse, Data, _Ops}} ->
+        {request, From, {parse, Data, [{parser, Parser}]}} ->
+            %% [parser_ | Parser],
             reply(From, extract_name(Data)),
             loop()
     end.
@@ -64,7 +65,7 @@ extract_name(Data) ->
 %% -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 
--define(setup(F), {setup, fun() -> start() end, stop() end, F}).
+-define(setup(F), {setup, fun() -> start() end, fun(_)-> stop() end, F}).
 
 server_test_() ->
     [{"The server is started with a registered name at the beginning",
