@@ -1,5 +1,6 @@
 %% @doc whois.erl
 -module(whois).
+-include_lib("../include/tlds.hrl").
 
 -export([lookup/1, lookup/2]).
 
@@ -7,6 +8,8 @@
 
 %% RFC 3912 indicates that the request must end with ASCII CR and ASCII LF
 -define(REQUEST_END, <<"\r\n">>).
+
+-define(TEST_DATA_PATH, "../test/data/").
 
 -define(TLD_RE, <<"^.+(\\..+)$">>).
 
@@ -41,15 +44,8 @@ extract_tld(Domain) ->
 
 %% check_tld(Tld) ->
 
-load_tlds() ->
-    [
-        {<<".com">>, <<"whois.crsnic.net">>},
-        {<<".org">>, <<"whois.publicinterestregistry.net">>},
-        {<<".be">>, <<"whois.dns.be">>}
-    ].
-
 get_tld_url(Tld) ->
-    get_tld_url(Tld, load_tlds()).
+    get_tld_url(Tld, ?TLDS).
 get_tld_url(Tld, [{Tld, Url} | _]) ->
     Url;
 get_tld_url(Tld, [_ | Tlds]) ->
@@ -84,7 +80,7 @@ response(Response, _Ops) ->
     io:format("Response: ~s~n", [Response]).
 
 save(File, Data) ->
-    {ok, Descriptor} = file:open(["../test/data/" | File], [raw, write]),
+    {ok, Descriptor} = file:open([?TEST_DATA_PATH | File], [raw, write]),
     file:write(Descriptor, Data),
     file:close(Descriptor). 
 
