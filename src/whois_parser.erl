@@ -51,8 +51,11 @@ loop() ->
             loop()
     end.
 
+-define(NAME_RE, <<"^\s*Domain Name:\s*([a-z\\d\\-\\.]+)$">>).
 extract_name(Data) ->
-    {name, Data}.
+    {ok, NameRe} = re:compile(?NAME_RE, [caseless]),
+    {match, [Name]} = re:run(Data, NameRe, [{capture, [1], binary}]),
+    string:to_lower(binary_to_list(Name)).
 
 
 
