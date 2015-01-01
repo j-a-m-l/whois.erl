@@ -7,3 +7,4 @@ src/*.beam
 deps/
 logs/
 .tmp/
+test/data
