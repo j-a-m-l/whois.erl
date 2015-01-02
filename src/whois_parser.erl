@@ -3,60 +3,16 @@
 -module(whois_parser).
 -include_lib("../include/whois.hrl").
 
--export([start/0, stop/0, parse/1, parse/2]).
+-export([process/1, process/2]).
 
-%% Is necessary exporting this function for being able to trigger it after spawning a process
--export([init/1]).
-
--define(DEFAULT_OPS, []).
--define(TIMEOUT, 1000).
-
-start() ->
-    register(?MODULE, spawn_link(?MODULE, init, [self()])),
-    receive
-        started -> ok
-    after
-        ?TIMEOUT -> {error, starting}
-    end.
-
-stop() ->
-    call(stop).
-
-parse(Data) ->
-    parse(Data, ?DEFAULT_OPS).
-parse(Data, Ops) ->
-    call({parse, Data, Ops}).
-
-init(Pid) ->
-    Pid ! started,
-    loop().
-
-call(Request) ->
-    Ref = make_ref(),
-    ?MODULE ! {request, {self(), Ref}, Request},
-    receive
-        {reply, Ref, Reply} -> Reply
-    after
-        ?TIMEOUT -> {error, timeout}
-    end.
-
-reply({To, Ref}, Reply) ->
-    To ! {reply, Ref, Reply}.
-
-loop() ->
-    receive
-        {request, From, stop} ->
-            reply(From, ok);
-        {request, From, {parse, Data, _Ops}} ->
-            %% TODO
-            Parser = "com",
-            reply(From, process(Parser, Data)),
-            loop()
-    end.
-
-process(Parser, Data) ->
+process(Query) ->
+    ?MODULE:process(?MODULE:infer_parser(Query), Query).
+process(Parser, Query) ->
     Module = list_to_existing_atom(string:concat(Parser, "_parser")),
-    Module:parse(Data).
+    Module:parse(Query).
+
+infer_parser(Query)->
+    ok.
 
 
 %% -ifdef(TEST).
