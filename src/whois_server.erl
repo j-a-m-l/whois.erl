@@ -12,16 +12,20 @@
 request(Url, Domain, Ops) when is_list(Url) ->
     Port = proplists:get_value(port, Ops),
     Timeout = proplists:get_value(timeout, Ops),
+
+    {ok, Binary} = file:read_file(list_to_binary(["../test/data/", Domain])),
+    {ok, binary_to_list(Binary)}.
+
     %% send_timeout configures gen_tcp:send 
-    case gen_tcp:connect(Url, Port, [binary, {active, false}, {packet, 0}, {send_timeout, Timeout}], Timeout) of
-        {ok, Sock} ->
-            ok = gen_tcp:send(Sock, adapt_request(Domain)),
-            Response = recv(Sock),
-            ok = gen_tcp:close(Sock),
-            {ok, Response};
-        {error, Reason} ->
-            {error, Reason}
-    end.
+    %% case gen_tcp:connect(Url, Port, [binary, {active, false}, {packet, 0}, {send_timeout, Timeout}], Timeout) of
+    %%     {ok, Sock} ->
+    %%         ok = gen_tcp:send(Sock, adapt_request(Domain)),
+    %%         Response = recv(Sock),
+    %%         ok = gen_tcp:close(Sock),
+    %%         {ok, Response};
+    %%     {error, Reason} ->
+    %%         {error, Reason}
+    %% end.
 
 recv(Sock) ->
     recv(Sock, []).

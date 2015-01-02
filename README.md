@@ -1,6 +1,7 @@
 whois.erl
 =========
-This project performs [WHOIS]() request 
+This project performs [WHOIS](https://en.wikipedia.org/wiki/Whois) request 
+It [RFC 3912](https://tools.ietf.org/html/rfc3912)
 
 
 Requirements
