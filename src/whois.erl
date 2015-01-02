@@ -1,12 +1,9 @@
 %% @doc whois.erl
 -module(whois).
--include_lib("../include/tlds.hrl").
 
 -export([lookup/1, lookup/2]).
 
 -define(DEFAULT_OPS, [{port, 43}, {timeout, 12000}]).
-
--define(TEST_DATA_PATH, "../test/data/").
 
 %% -spec lookup(binary()) -> {ok, Response}.
 lookup(Domain) ->
