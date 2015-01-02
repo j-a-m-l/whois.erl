@@ -10,13 +10,6 @@
 
 -define(TLD_RE, <<"^.+(\\..+)$">>).
 
-%% TODO start, stop, etc.
-
-init() ->
-    ok = whois_parser:start(),
-    {ok, TldRe} = re:compile(?TLD_RE),
-    [TldRe].
-
 %% -spec lookup(binary()) -> {ok, Response}.
 lookup(Domain) ->
     lookup(list_to_binary(Domain), []).
@@ -29,6 +22,11 @@ lookup(Domain, Ops) when is_binary(Domain), is_list(Ops) ->
         {error, Reason} ->
             {error, Reason}
     end.
+
+init() ->
+    ok = whois_parser:start(),
+    {ok, TldRe} = re:compile(?TLD_RE),
+    [TldRe].
 
 merge_options(_Ops) ->
     ?DEFAULT_OPS.
