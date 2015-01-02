@@ -33,6 +33,26 @@ TldRecord
 TldRecord
 ```
 
+Server
+------
+Instead of using `whois:lookup/1`, which involves preparing the module on every call, it is possible to run a server, and query it directly: TODO
+```erlang
+Pid = whois_server:start(Options),
+
+receive
+  {ok, TldRecords} ->
+    other:action(TldRecords),
+    loop();
+  {error, Reason} ->
+    Reason
+end,
+
+Pid ! {whois, "domain.com"},
+%% Pid ! {whois, ["domain1.com", "domain2.com"]},
+whois_server:start:stop().
+```
+
+
 Data
 ====
 You can update it, indepently of the rhythm of this project, using TODO.
