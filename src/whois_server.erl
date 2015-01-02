@@ -34,7 +34,7 @@ init(Pid) ->
     {ok, DomainRe} = re:compile(?DOMAIN_RE),
     {ok, TldRe} = re:compile(?TLD_RE),
     Pid ! started,
-    loop([{domain_re, DomainRe}, {tld_re}, TldRe]).
+    loop([{domain_re, DomainRe}, {tld_re, TldRe}]).
 
 call(Request) ->
     Ref = make_ref(),
@@ -63,7 +63,6 @@ extract_domain(Query, Ops) ->
     extract_using_re(Query, Ops, domain_re).
 
 extract_tld(Domain, Ops) ->
-    io:format(":~p~n", [Ops]),
     extract_using_re(Domain, Ops, tld_re).
 
 extract_using_re(Data, Ops, Type) ->
@@ -97,8 +96,6 @@ process(Query, Ops) ->
             %% TODO Reason
             stop()
     end.
-
-%% -define(TEST_DATA_PATH, "../test/data/").
 
 %% case whois_server:request(binary_to_list(Url), Domain, merge_options(Ops)) of
 %%     {ok, Response} ->

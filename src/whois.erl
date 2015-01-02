@@ -23,6 +23,7 @@ lookup(Domain, Ops) when is_binary(Domain), is_list(Ops) ->
     Pid ! {whois, Domain},
     whois_server:stop().
 
+%% TODO
 merge_options(_Ops) ->
     ?DEFAULT_OPS.
 
