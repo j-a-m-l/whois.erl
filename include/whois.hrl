@@ -1,21 +1,23 @@
 %% The data of WHOIS responses
--record(response, {
-        raw :: binary(),
-        domain :: domain,
-        db_date :: binary(),
-        terms :: binary()
-       }). 
+%% -record(response, {
+%%         raw :: binary(),
+%%         whois :: whois,
+%%         db_date :: binary(),
+%%         terms :: binary()
+%%        }). 
 
 %% The domain data extracted from WHOIS responses
--record(domain, {
+-record(whois, {
         name :: binary(),
         registrar :: binary(),
         referral_url :: binary(),
-        name_servers :: list(),
-        status :: list(),
-        updated_date :: binary(),
+        name_servers = [] :: list(),
+        status = [] :: list(),
+        update_date :: binary(),
         creation_date :: binary(),
-        expiration_date :: binary()
+        expiration_date :: binary(),
+        %% Inferred fields
+        available = unknown :: atom()
        }).
 
 %% The TLD data

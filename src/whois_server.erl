@@ -91,7 +91,7 @@ process(Query, Ops) ->
         true ->
             Url = get_tld_url(Tld),
             Response = whois_request:perform(Url, Domain, Ops),
-            whois_parser:parse(Response);
+            whois_parser:process(Response, Tld);
         false ->
             %% TODO Reason
             stop()
