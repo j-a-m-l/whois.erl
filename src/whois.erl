@@ -8,12 +8,10 @@
 %% -spec lookup(binary()) -> {ok, Response}.
 lookup(Domain) ->
     lookup(Domain, []).
-
 lookup(Domain, Ops) when is_list(Domain), is_list(Ops) ->
-    lookup(list_to_binary(Domain), []);
-
+    lookup(list_to_binary(Domain), Ops);
 lookup(Domain, Ops) when is_binary(Domain), is_list(Ops) ->
-    Pid = whois_server:start(Ops),
+    Pid = whois_server:start(merge_options(Ops)),
     receive
       {ok, TldRecords} ->
         other:action(TldRecords);

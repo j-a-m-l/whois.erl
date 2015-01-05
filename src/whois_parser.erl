@@ -8,8 +8,8 @@
 process(Data, Tld) when is_list(Data) ->
     process(Tld, list_to_binary(Data));
 process(Data, Tld) when is_binary(Data) ->
-    %% Module = list_to_existing_atom(string:concat(Tld, "_parser")),
-    Module = list_to_atom(string:concat(Tld, "_parser")),
+    %% Module = list_to_existing_atom(string:concat("whois_", Tld, "_parser")),
+    Module = list_to_atom(string:concat("whois_", Tld, "_parser")),
     case Module:infer_status(Data) of
         unavailable -> Module:unavailable(Data);
         available -> Module:available(Data);

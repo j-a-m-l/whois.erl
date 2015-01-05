@@ -1,26 +1,23 @@
 %% @doc 
--module(com_parser).
+-module(whois_com_parser).
 
 -export([infer_status/1, unavailable/1, available/1, exist/1]).
 
-%% -include_lib("../../include/whois.hrl").
+-include_lib("../../include/whois.hrl").
 -include_lib("../../include/parser.hrl").
 
 -define(PARSER, "com").
 
--define(UNAVAILABLE, "Not available for registration.").
--define(UNAVAILABLE_SECOND_LEVEL, "Not available for second level registration.").
--define(AVAILABLE, "No match for \"").
--define(EXIST_RE, <<"^\\s*Status:\\s*(.+)\\s*$">>).
-
+-define(STATUS_RE, <<"^\\s*Status:\\s*(.+)\\s*$">>).
 infer_status(Data) ->
-    if
-        string:str(Data, ?UNAVAILABLE) > 0 -> unavailable;
-        string:str(Data, ?UNAVAILABLE_SECOND_LEVEL) > 0 -> unavailable;
-        string:str(Data, ?AVAILABLE) > 0 -> available;
-        {badmatch, nomatch} = re:run(Data, ?EXIST_RE) -> exist;
-        _ -> unknown
-    end.
+    case match(Data, ?STATUS_RE) of
+        "Not available for second level registration."
+        "Not available for registration."
+        "No match for \""
+        {} ->
+            unavailable.
+        _ -> 
+    exist.
 
 unavailable(Data) ->
     Data.
@@ -54,14 +51,6 @@ extract_registrar_url(Data) ->
 
 start() -> ok.
 stop() -> ok.
-
-test_file(File) ->
-    {ok, Binary} = file:read_file(list_to_binary([?TEST_DATA_PATH, ?PARSER, "/", File])),
-    Binary.
-
-infer_unavailable_status_test() ->
-    [?assertEqual(unavailable, infer_status(test_file("example2.com")))].
-
 
 %% parse_test_() ->
 %%     [{"Accepts strings",
