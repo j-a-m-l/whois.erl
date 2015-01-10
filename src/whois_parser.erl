@@ -4,6 +4,12 @@
 -include_lib("../include/whois.hrl").
 
 -export([process/2]).
+-export([behaviour_info/1]).
+
+-callback parse(Data :: list()) -> ok.
+
+behaviour_info(callbacks) ->
+    [{init, 1}, {terminate, 0}].
 
 process(Data, Tld) when is_list(Data) ->
     process(Tld, list_to_binary(Data));
