@@ -18,6 +18,9 @@ Installation
 API
 ===
 
+whois.erl is an OTP application, with its own supervisor.
+TODO? That supervisor uses an ETS table `whois_server` for keeping the state of the requests and responses.
+
 TODO async...
 ```erlang
 TlRecord = whois:lookup("domain.com").

@@ -35,6 +35,7 @@ recv(Sock, Acc) ->
             iolist_to_binary(lists:reverse(Acc))
     end.
 
+%% TODO create whois_adapter behaviour
 adapt_request(Domain) ->
     list_to_binary([Domain, ?REQUEST_END]).
 
