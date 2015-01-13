@@ -1,5 +1,5 @@
-%% @doc whois_verisign.erl
-%% Adapter for Verisign WHOIS request data
+%% @doc 
+%% Adapter for WHOIS requests that converts a domain into a valid request data
 -module(whois_default_adapter).
 
 -behaviour(whois_adapter).
@@ -9,12 +9,12 @@
 -define(REQUEST_END, "\r\n").
 
 adapt(Domain) ->
-    string:concat("=", Domain, ?REQUEST_END).
+    string:concat(Domain, ?REQUEST_END).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 
 adapt_test() ->
-    [?assertEqual("=example.net\r\n", adapt("example.net"))].
+    [?assertEqual("example.net\r\n", adapt("example.net"))].
 
 -endif.
