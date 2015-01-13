@@ -4,9 +4,6 @@
 
 -export([perform/3]).
 
-%% RFC 3912 indicates that the request must end with ASCII CR and ASCII LF
--define(REQUEST_END, <<"\r\n">>).
-
 perform(Url, Domain, Ops) when is_list(Url) ->
     Port = proplists:get_value(port, Ops),
     Timeout = proplists:get_value(timeout, Ops),
@@ -35,10 +32,9 @@ recv(Sock, Acc) ->
             iolist_to_binary(lists:reverse(Acc))
     end.
 
-%% TODO create whois_adapter behaviour
-adapt_request(Domain) ->
-    list_to_binary([Domain, ?REQUEST_END]).
-
+adapt_request(Data) ->
+    %% adapt()
+    list_to_binary(Data).
 
 %% -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").

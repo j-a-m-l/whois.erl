@@ -28,20 +28,6 @@ get_tld_url(Tld, [{Tld, Url} | _]) ->
 get_tld_url(Tld, [_ | Tlds]) ->
     get_tld_url(Tld, Tlds).
 
-%% TODO one process for each query?
-process(Query, Ops) ->
-    Domain = extract_domain(Query, Ops),
-    Tld = extract_tld(Domain, Ops),
-    case check_tld(Tld) of
-        true ->
-            Url = get_tld_url(Tld),
-            Response = whois_request:perform(Url, Domain, Ops),
-            whois_parser:process(Response, Tld);
-        false ->
-            %% TODO Reason
-            stop()
-    end.
-
 
 %% -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").

@@ -65,7 +65,7 @@ loop(Ops) ->
 init([]) ->
     {ok, []}.
 
-handle_call({whois, Ref, Opts}, _, State) ->
+handle_call({whois, Ref, Ops}, _, State) ->
     {reply, ok, State};
 handle_call(_Request, _From, State) ->
     {reply, ignore, State}.
@@ -78,6 +78,27 @@ handle_info(_Info, State) ->
 
 terminate(_Reason, _State) ->
     ok.
+
+
+%% TODO one process for each query?
+process(Query, Ops) ->
+    Domain = extract_domain(Query, Ops),
+    Tld = extract_tld(Domain, Ops),
+    case check_tld(Tld) of
+        true ->
+            Url = get_tld_url(Tld),
+            Response = whois_request:perform(Url, Domain, Ops),
+            Parser = infer_parser(Tld),
+            Parser:parse(Response);
+        false ->
+            %% TODO Reason
+            stop()
+    end.
+
+
+infer_parser(Tld) ->
+    %% list_to_existing_atom(string:concat("whois_", Tld, "_parser")).
+    list_to_atom(string:concat("whois_", Tld, "_parser")).
 
 
 %% case whois_server:request(binary_to_list(Url), Domain, merge_options(Ops)) of

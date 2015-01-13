@@ -4,12 +4,22 @@
 -include_lib("../include/whois.hrl").
 
 -export([process/2]).
--export([behaviour_info/1]).
+%% -export([behaviour_info/1]).
 
--callback parse(Data :: list()) -> ok.
+-callback parse(Domain :: list(), Data :: list()) -> list().
 
-behaviour_info(callbacks) ->
-    [{init, 1}, {terminate, 0}].
+%% behaviour_info(callbacks) ->
+%%     [{init, 1}, {terminate, 0}].
+
+start() ->
+    ok.
+start(Ops) ->
+    %% init(Ops).
+    ok.
+
+stop() ->
+    %% terminate().
+    ok.
 
 process(Data, Tld) when is_list(Data) ->
     process(Tld, list_to_binary(Data));
@@ -30,17 +40,33 @@ unknown(Data) ->
 normalize(Name) ->
     list_to_binary(string:to_lower(binary_to_list(Name))).
 
+extract(Data, Re) ->
+    %% TODO compile the first time
+    {ok, CompiledRe} = re:compile(Re, [caseless, multiline, {newline, any}]),
+    {match, [Result]} = re:run(Data, CompiledRe, [{capture, [1], binary}]),
+    Result.
+
+compile(Re) ->
+    {ok, CompiledRe} = re:compile(Re, [caseless, multiline, {newline, any}]),
+    CompiledRe.
+
+match(Data, CompiledRe, Matches) ->
+    {match, [Result]} = re:run(Data, CompiledRe, [{capture, Matches, binary}]),
+    Result.
+
+%% TODO
+log(Reason) ->
+    io:format("logged:~p~n", [Reason]),
+    Reason.
+
 %% -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 
 -define(setup(F), {setup, fun() -> start() end, fun(_)-> stop() end, F}).
 
-start() -> ok.
-stop() -> ok.
-
 process_test_() ->
     [{"Invokes the parser linked to the Tld",
-      ?setup(fun tld_parser/0)}]
+      ?setup(fun tld_parser/0)}].
 
     %% {"Normalizes the domain name",
     %%  ?setup(fun normalized_domain_name/0)}].
