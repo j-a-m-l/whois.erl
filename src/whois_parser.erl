@@ -8,8 +8,11 @@
 
 -callback parse(Domain :: list(), Data :: list()) -> list().
 
+
 %% behaviour_info(callbacks) ->
 %%     [{init, 1}, {terminate, 0}].
+
+-export([extract/2, includes/2]).
 
 start() ->
     ok.
@@ -39,6 +42,16 @@ unknown(Data) ->
 
 normalize(Name) ->
     list_to_binary(string:to_lower(binary_to_list(Name))).
+
+includes(Data, Needle) when is_list(Data) ->
+    includes(list_to_binary(Data), Needle);
+includes(Data, Needle) when is_list(Needle) ->
+    includes(Data, list_to_binary(Needle));
+includes(Data, Needle) ->
+    case binary:match(Data, Needle) of
+        {_Start, _Length} -> true;
+        nomatch -> false
+    end.
 
 extract(Data, Re) ->
     %% TODO compile the first time

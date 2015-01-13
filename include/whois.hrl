@@ -8,7 +8,7 @@
 
 %% The domain data extracted from WHOIS responses
 -record(whois, {
-        name :: binary(),
+        domain :: binary(),
         registrar :: binary(),
         referral_url :: binary(),
         name_servers = [] :: list(),

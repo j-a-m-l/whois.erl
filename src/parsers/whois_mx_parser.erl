@@ -1,5 +1,6 @@
 %% @doc 
--module(whois_no_parser).
+%% TODO Admits "="
+-module(whois_mx_parser).
 
 -include_lib("../include/whois.hrl").
 -behaviour(whois_parser).
@@ -15,10 +16,10 @@ parse(Domain, Data) ->
     #whois{domain = Domain, status = Status, available = Available}.
 
 extract_status(Data) ->
-    case whois_parser:includes(Data, <<"% No match">>) of
+    case whois_parser:includes(Data, <<"No_Se_Encontro_El_Objeto">>) of
         true -> available;
         false ->
-            case whois_parser:includes(Data, <<"NORID Handle">>) of
+            case whois_parser:includes(Data, <<"Domain Name:">>) of
                 true -> exists;
                 false -> error(unknown_status)
             end
@@ -32,7 +33,7 @@ stop() -> ok.
 -define(setup(F), {setup, fun() -> start() end, fun(_)-> stop() end, F}).
 
 -define(TEST_DATA_PATH, "../test/data/").
--define(PARSER, "no").
+-define(PARSER, "mx").
 test_data_for(Domain) ->
     {ok, Data} = file:read_file(list_to_binary([?TEST_DATA_PATH, ?PARSER, "/", Domain])),
     Data.
@@ -40,7 +41,7 @@ test_data_for(Domain) ->
 %% unavailable_test_() ->
 
 available_test_() ->
-    Domain = "example2.no",
+    Domain = "example2.mx",
     Data = test_data_for(Domain),
     Result = parse(Domain, Data),
     [{"Returns the domain name",
@@ -51,7 +52,7 @@ available_test_() ->
       ?setup( fun() -> available_test(true, Result) end )}].
 
 exists_test_() ->
-    Domain = "google.no",
+    Domain = "google.mx",
     Data = test_data_for(Domain),
     Result = parse(Domain, Data),
     [{"Returns the domain name",

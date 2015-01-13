@@ -1,5 +1,5 @@
 %% @doc 
--module(whois_no_parser).
+-module(whois_org_parser).
 
 -include_lib("../include/whois.hrl").
 -behaviour(whois_parser).
@@ -15,10 +15,10 @@ parse(Domain, Data) ->
     #whois{domain = Domain, status = Status, available = Available}.
 
 extract_status(Data) ->
-    case whois_parser:includes(Data, <<"% No match">>) of
+    case whois_parser:includes(Data, <<"TODO">>) of
         true -> available;
         false ->
-            case whois_parser:includes(Data, <<"NORID Handle">>) of
+            case whois_parser:includes(Data, <<"Domain ID:">>) of
                 true -> exists;
                 false -> error(unknown_status)
             end
@@ -32,26 +32,26 @@ stop() -> ok.
 -define(setup(F), {setup, fun() -> start() end, fun(_)-> stop() end, F}).
 
 -define(TEST_DATA_PATH, "../test/data/").
--define(PARSER, "no").
+-define(PARSER, "org").
 test_data_for(Domain) ->
     {ok, Data} = file:read_file(list_to_binary([?TEST_DATA_PATH, ?PARSER, "/", Domain])),
     Data.
 
 %% unavailable_test_() ->
 
-available_test_() ->
-    Domain = "example2.no",
-    Data = test_data_for(Domain),
-    Result = parse(Domain, Data),
-    [{"Returns the domain name",
-      ?setup( fun() -> domain_test(Domain, Result) end )},
-     {"Has an 'available' status",
-      ?setup( fun() -> status_test(available, Result) end )},
-     {"It's available",
-      ?setup( fun() -> available_test(true, Result) end )}].
+%% available_test_() ->
+%%     Domain = "example2.org",
+%%     Data = test_data_for(Domain),
+%%     Result = parse(Domain, Data),
+%%     [{"Returns the domain name",
+%%       ?setup( fun() -> domain_test(Domain, Result) end )},
+%%      {"Has an 'available' status",
+%%       ?setup( fun() -> status_test(available, Result) end )},
+%%      {"It's available",
+%%       ?setup( fun() -> available_test(true, Result) end )}].
 
 exists_test_() ->
-    Domain = "google.no",
+    Domain = "google.org",
     Data = test_data_for(Domain),
     Result = parse(Domain, Data),
     [{"Returns the domain name",
