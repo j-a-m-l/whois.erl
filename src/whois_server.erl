@@ -12,6 +12,9 @@
 %% gen_server callbacks
 -export([init/1, terminate/2, handle_call/3, handle_cast/2]).
 
+%% TODO stricter
+-define(DOMAIN_RE, <<"^(?:.+://)?(?:.+\\.)?(\\w+\\.\\w+)(?:/.*)?$">>).
+-define(TLD_RE, <<"^.+(\\.\\w+)$">>).
 -define(DEFAULT_LOOKUP_TIMEOUT, 10000).
 
 %% Server API
@@ -25,19 +28,23 @@ stop() ->
 %% Service API
 
 lookup(Query) ->
-    lookup(Query, ?DEFAULT_LOOKUP_TIMEOUT);
+    lookup(Query, ?DEFAULT_LOOKUP_TIMEOUT).
 lookup(Query, Timeout) when is_list(Query) ->
     lookup(list_to_binary(Query), Timeout);
-lookup(Query, Timeout) when is_binary(Query) ->
+lookup(Query, Timeout) when is_binary(Query), is_integer(Timeout) ->
     gen_server:call(?MODULE, {lookup, Query}, Timeout).
 
 %% gen_server callbacks
 
 init(State) ->
-    {ok, State}
+    {ok, DomainRe} = re:compile(?DOMAIN_RE),
+    {ok, TldRe} = re:compile(?TLD_RE),
+    {ok, [{domain_re, DomainRe} | [{tld_re, TldRe} | State]]}.
 
-handle_call({lookup, Query, Ops}, _From, State) ->
-    {reply, ok, State};
+handle_call({lookup, Query}, _From, State) ->
+    Reply = process(Query, State),
+    io:format("Reply:~p~n", [Reply]),
+    {reply, Reply, State};
 handle_call(_Request, _From, State) ->
     {reply, ignore, State}.
 
@@ -49,20 +56,19 @@ handle_cast(_Request, State) ->
 terminate(_Reason, _State) ->
     ok.
 
+%% TODO
+%% code_change() ->
+
 %% Private API
 
-%% TODO stricter
--define(DOMAIN_RE, <<"^(?:.+://)?(?:.+\\.)?(\\w+\\.\\w+)(?:/.*)?$">>).
--define(TLD_RE, <<"^.+(\\.\\w+)$">>).
-
 %% TODO one process for each query?
-process(Query, Ops) ->
-    Domain = extract_domain(Query, Ops),
-    Tld = extract_tld(Domain, Ops),
+process(Query, State) ->
+    Domain = extract_domain(Query, State),
+    Tld = extract_tld(Domain, State),
     case check_tld(Tld) of
         true ->
             Url = get_tld_url(Tld),
-            Response = whois_request:perform(Url, Domain, Ops),
+            Response = whois_request:perform(Url, Domain, State),
             Parser = infer_parser(Tld),
             Parser:parse(Response);
         false ->
@@ -70,16 +76,33 @@ process(Query, Ops) ->
             stop()
     end.
 
+extract_domain(Query, State) ->
+    extract_using_re(Query, State, domain_re).
+
+extract_tld(Domain, State) ->
+    extract_using_re(Domain, State, tld_re).
+
+extract_using_re(Data, State, Type) ->
+    Re = proplists:get_value(Type, State),
+    {match, [Result]} = re:run(Data, Re, [{capture, [1], binary}]),
+    Result.
+
+check_tld(Tld) ->
+    case proplists:get_value(Tld, ?TLDS) of
+        undefined -> false;
+        _ -> true
+    end.
+
+get_tld_url(Tld) ->
+    get_tld_url(Tld, ?TLDS).
+get_tld_url(Tld, [{Tld, Url} | _]) ->
+    Url;
+get_tld_url(Tld, [_ | Tlds]) ->
+    get_tld_url(Tld, Tlds).
 
 infer_parser(Tld) ->
     %% list_to_existing_atom(string:concat("whois_", Tld, "_parser")).
     list_to_atom(string:concat("whois_", Tld, "_parser")).
-%% 
-%% init(Pid) ->
-%%     {ok, DomainRe} = re:compile(?DOMAIN_RE),
-%%     {ok, TldRe} = re:compile(?TLD_RE),
-%%     Pid ! started,
-%%     loop([{domain_re, DomainRe}, {tld_re, TldRe}]).
 
 %% case whois_server:request(binary_to_list(Url), Domain, merge_options(Ops)) of
 %%     {ok, Response} ->
@@ -132,6 +155,29 @@ infer_parser(Tld) ->
 %% parses_responses() ->
 %%     [?assertEqual("example.net", ?MODULE:request("Domain Name: EXAMPLE.NET")),
 %%      ?assertEqual("example.net", ?MODULE:request("Domain Name: Example.net"))].
+
+%% extract_domain_test_() ->
+%%     {ok, Re} = re:compile(?DOMAIN_RE),
+%%     Ops = [{domain_re, Re}],
+%%     [?_assertEqual(<<"example.com">>, extract_domain(<<"example.com/">>, Ops)),
+%%      ?_assertEqual(<<"example.com">>, extract_domain(<<"example.com/index.html">>, Ops)),
+%%      ?_assertEqual(<<"example.com">>, extract_domain(<<"www.example.com">>, Ops)),
+%%      ?_assertEqual(<<"example.com">>, extract_domain(<<"http://example.com">>, Ops)),
+%%      ?_assertEqual(<<"example.com">>, extract_domain(<<"example.com">>, Ops))].
+%% 
+%% extract_tld_test_() ->
+%%     {ok, Re} = re:compile(?TLD_RE),
+%%     Ops = [{tld_re, Re}],
+%%     [?_assertEqual(<<".org">>, extract_tld(<<"lol.org">>, Ops)),
+%%      ?_assertEqual(<<".com">>, extract_tld(<<"example.com">>, Ops))].
+%% 
+%% check_tld_test_() ->
+%%     [?_assertEqual(true, check_tld(<<".com">>)),
+%%      ?_assertEqual(false, check_tld(<<"com">>)),
+%%      ?_assertEqual(false, check_tld(<<".l0l">>))].
+%% 
+%% get_tld_url_test_() ->
+%%     [?_assertEqual(<<"whois.crsnic.net">>, get_tld_url(<<".com">>))].
 
 %% -endif.
 
