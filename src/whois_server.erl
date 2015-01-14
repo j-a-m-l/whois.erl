@@ -7,78 +7,53 @@
 
 -include_lib("../include/tlds.hrl").
 
--export([start/0, start/1, stop/0]).
+%% Public interface
+-export([start_link/1, stop/0, lookup/1, lookup/2]).
+%% gen_server callbacks
+-export([init/1, terminate/2, handle_call/3, handle_cast/2]).
 
-%% Is necessary exporting this function for being able to trigger it after spawning a process
--export([init/1]).
+-define(DEFAULT_LOOKUP_TIMEOUT, 10000).
 
--define(DEFAULT_OPS, []).
--define(TIMEOUT, 1000).
+%% Server API
 
-%% TODO stricter
--define(DOMAIN_RE, <<"^(?:.+://)?(?:.+\\.)?(\\w+\\.\\w+)(?:/.*)?$">>).
--define(TLD_RE, <<"^.+(\\.\\w+)$">>).
-
-start() ->
-    start(?DEFAULT_OPS).
-start(_Ops) ->
-    register(?MODULE, spawn_link(?MODULE, init, [self()])),
-    receive
-        started -> ok
-    after
-        ?TIMEOUT -> {error, starting}
-    end.
+start_link(Ops) ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, Ops, []).
 
 stop() ->
-    call(stop).
+    gen_server:cast(?MODULE, stop).
 
-init(Pid) ->
-    {ok, DomainRe} = re:compile(?DOMAIN_RE),
-    {ok, TldRe} = re:compile(?TLD_RE),
-    Pid ! started,
-    loop([{domain_re, DomainRe}, {tld_re, TldRe}]).
+%% Service API
 
-call(Request) ->
-    Ref = make_ref(),
-    ?MODULE ! {whois, {self(), Ref}, Request},
-    receive
-        {whois_response, Ref, Reply} -> Reply
-    after
-        ?TIMEOUT -> {error, timeout}
-    end.
+lookup(Query) ->
+    lookup(Query, ?DEFAULT_LOOKUP_TIMEOUT);
+lookup(Query, Timeout) when is_list(Query) ->
+    lookup(list_to_binary(Query), Timeout);
+lookup(Query, Timeout) when is_binary(Query) ->
+    gen_server:call(?MODULE, {lookup, Query}, Timeout).
 
-reply({To, Ref}, Reply) ->
-    To ! {whois_response, Ref, Reply}.
+%% gen_server callbacks
 
-loop(Ops) ->
-    receive
-        {whois, From, stop} ->
-            reply(From, ok);
-        {whois, From, Query} ->
-            reply(From, process(Query, Ops)),
-            loop(Ops)
-    end.
+init(State) ->
+    {ok, State}
 
-
-%% gen_server.
-
-init([]) ->
-    {ok, []}.
-
-handle_call({whois, Ref, Ops}, _, State) ->
+handle_call({lookup, Query, Ops}, _From, State) ->
     {reply, ok, State};
 handle_call(_Request, _From, State) ->
     {reply, ignore, State}.
 
+handle_cast(stop, State) ->
+    {stop, normal, State};
 handle_cast(_Request, State) ->
-    {noreply, State}.
-
-handle_info(_Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
     ok.
 
+%% Private API
+
+%% TODO stricter
+-define(DOMAIN_RE, <<"^(?:.+://)?(?:.+\\.)?(\\w+\\.\\w+)(?:/.*)?$">>).
+-define(TLD_RE, <<"^.+(\\.\\w+)$">>).
 
 %% TODO one process for each query?
 process(Query, Ops) ->
@@ -99,7 +74,12 @@ process(Query, Ops) ->
 infer_parser(Tld) ->
     %% list_to_existing_atom(string:concat("whois_", Tld, "_parser")).
     list_to_atom(string:concat("whois_", Tld, "_parser")).
-
+%% 
+%% init(Pid) ->
+%%     {ok, DomainRe} = re:compile(?DOMAIN_RE),
+%%     {ok, TldRe} = re:compile(?TLD_RE),
+%%     Pid ! started,
+%%     loop([{domain_re, DomainRe}, {tld_re, TldRe}]).
 
 %% case whois_server:request(binary_to_list(Url), Domain, merge_options(Ops)) of
 %%     {ok, Response} ->

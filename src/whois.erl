@@ -1,4 +1,5 @@
 %% @doc whois.erl
+%% This module acts a as library for looking up WHOIS servers.
 -module(whois).
 
 -export([lookup/1, lookup/2]).
@@ -11,7 +12,8 @@ lookup(Domain) ->
 lookup(Domain, Ops) when is_list(Domain), is_list(Ops) ->
     lookup(list_to_binary(Domain), Ops);
 lookup(Domain, Ops) when is_binary(Domain), is_list(Ops) ->
-    Pid = whois_server:start(merge_options(Ops)),
+    gen_server:start_link({local, whois_server}, whois_server),
+    Pid = start(merge_options(Ops)),
     receive
       {ok, TldRecords} ->
         other:action(TldRecords);
@@ -19,7 +21,7 @@ lookup(Domain, Ops) when is_binary(Domain), is_list(Ops) ->
         Reason
     end,
     Pid ! {whois, Domain},
-    whois_server:stop().
+    gen_server:cast(whois_server, stop).
 
 %% TODO
 merge_options(_Ops) ->
