@@ -34,6 +34,9 @@ lookup(Query, Timeout) when is_list(Query) ->
 lookup(Query, Timeout) when is_binary(Query), is_integer(Timeout) ->
     gen_server:call(?MODULE, {lookup, Query}, Timeout).
 
+%% TODO looking up with and without '='?
+%% TODO looking up raw queries?
+
 %% gen_server callbacks
 
 init(State) ->
@@ -42,7 +45,7 @@ init(State) ->
     {ok, [{domain_re, DomainRe} | [{tld_re, TldRe} | State]]}.
 
 handle_call({lookup, Query}, _From, State) ->
-    Reply = process(Query, State),
+    Reply = process_query(Query, State),
     io:format("Reply:~p~n", [Reply]),
     {reply, Reply, State};
 handle_call(_Request, _From, State) ->
@@ -62,50 +65,37 @@ terminate(_Reason, _State) ->
 %% Private API
 
 %% TODO one process for each query?
-process(Query, State) ->
-    Domain = extract_domain(Query, State),
-    Tld = extract_tld(Domain, State),
-    case check_tld(Tld) of
-        true ->
-            Url = get_tld_url(Tld),
-            Response = request(Url, Domain, State),
-            Parser = infer_parser(Tld),
-            Parser:parse(Response);
-        false ->
-            %% TODO Reason
-            stop()
+process_query(Query, State) ->
+    case extract_domain(Query, State) of
+        {ok, Domain} ->
+            search_domain(Domain, State);
+        _ ->
+            {error, invalid_domain}
     end.
 
-request(Url, Domain, Ops) when is_list(Url) ->
-    Port = proplists:get_value(port, Ops),
-    Timeout = proplists:get_value(timeout, Ops),
+search_domain(Domain, State) ->
+    Tld = extract_tld(Domain, State),
+    case tld_exists(Tld) of
+        true ->
 
-    {ok, Binary} = file:read_file(list_to_binary(["../test/data/", Domain])),
-    {ok, binary_to_list(Binary)}.
+            %% {ok, Binary} = file:read_file(list_to_binary(["../test/data/", Tld, "/", Domain])),
+            %% {ok, binary_to_list(Binary)};
 
-    %% send_timeout configures gen_tcp:send 
-    %% case gen_tcp:connect(Url, Port, [binary, {active, false}, {packet, 0}, {send_timeout, Timeout}], Timeout) of
-    %%     {ok, Socket} ->
-    %%         ok = gen_tcp:send(Socket, adapt_request(Domain)),
-    %%         Response = recv(Socket),
-    %%         ok = gen_tcp:close(Socket),
-    %%         {ok, Response};
-    %%     {error, Reason} ->
-    %%         {error, Reason}
-    %% end.
-
-recv(Sock) ->
-    recv(Sock, []).
-recv(Sock, Acc) ->
-    case gen_tcp:recv(Sock, 0) of
-        {ok, Data} ->
-            recv(Sock, [Data | Acc]);
-        {error, closed} ->
-            iolist_to_binary(lists:reverse(Acc))
+            Url = get_tld_url(Tld),
+            Data = adapt_request(Domain),
+            case request(Url, Data, State) of
+                {ok, Response} ->
+                    Parser = infer_parser(Tld),
+                    Parser:parse(Response);
+                {error, Reason} ->
+                    {error, request, Reason}
+            end;
+        false ->
+            {error, unknown_tld}
     end.
 
 adapt_request(Data) ->
-    %% adapt()
+    %% TODO
     list_to_binary(Data).
 
 extract_domain(Query, State) ->
@@ -119,7 +109,7 @@ extract_using_re(Data, State, Type) ->
     {match, [Result]} = re:run(Data, Re, [{capture, [1], binary}]),
     Result.
 
-check_tld(Tld) ->
+tld_exists(Tld) ->
     case proplists:get_value(Tld, ?TLDS) of
         undefined -> false;
         _ -> true
@@ -155,6 +145,31 @@ infer_parser(Tld) ->
 %%     file:write(Fd, Data),
 %%     file:close(Fd). 
 
+request(Url, Data, Ops) ->
+    Port = proplists:get_value(port, Ops),
+    Timeout = proplists:get_value(timeout, Ops),
+
+    %% send_timeout configures gen_tcp:send 
+    case gen_tcp:connect(Url, Port, [binary, {active, false}, {packet, 0}, {send_timeout, Timeout}], Timeout) of
+        {ok, Socket} ->
+            ok = gen_tcp:send(Socket, Data),
+            Response = recv(Socket),
+            ok = gen_tcp:close(Socket),
+            {ok, Response};
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+recv(Sock) ->
+    recv(Sock, []).
+recv(Sock, Acc) ->
+    case gen_tcp:recv(Sock, 0) of
+        {ok, Data} ->
+            recv(Sock, [Data | Acc]);
+        {error, closed} ->
+            iolist_to_binary(lists:reverse(Acc))
+    end.
+
 
 
 %% -ifdef(TEST).
@@ -188,29 +203,29 @@ infer_parser(Tld) ->
 %%     [?assertEqual("example.net", ?MODULE:request("Domain Name: EXAMPLE.NET")),
 %%      ?assertEqual("example.net", ?MODULE:request("Domain Name: Example.net"))].
 
-%% extract_domain_test_() ->
-%%     {ok, Re} = re:compile(?DOMAIN_RE),
-%%     Ops = [{domain_re, Re}],
-%%     [?_assertEqual(<<"example.com">>, extract_domain(<<"example.com/">>, Ops)),
-%%      ?_assertEqual(<<"example.com">>, extract_domain(<<"example.com/index.html">>, Ops)),
-%%      ?_assertEqual(<<"example.com">>, extract_domain(<<"www.example.com">>, Ops)),
-%%      ?_assertEqual(<<"example.com">>, extract_domain(<<"http://example.com">>, Ops)),
-%%      ?_assertEqual(<<"example.com">>, extract_domain(<<"example.com">>, Ops))].
-%% 
-%% extract_tld_test_() ->
-%%     {ok, Re} = re:compile(?TLD_RE),
-%%     Ops = [{tld_re, Re}],
-%%     [?_assertEqual(<<".org">>, extract_tld(<<"lol.org">>, Ops)),
-%%      ?_assertEqual(<<".com">>, extract_tld(<<"example.com">>, Ops))].
-%% 
-%% check_tld_test_() ->
-%%     [?_assertEqual(true, check_tld(<<".com">>)),
-%%      ?_assertEqual(false, check_tld(<<"com">>)),
-%%      ?_assertEqual(false, check_tld(<<".l0l">>))].
-%% 
-%% get_tld_url_test_() ->
-%%     [?_assertEqual(<<"whois.crsnic.net">>, get_tld_url(<<".com">>))].
-%% 
+extract_domain_test_() ->
+    {ok, Re} = re:compile(?DOMAIN_RE),
+    Ops = [{domain_re, Re}],
+    [?_assertEqual(<<"example.com">>, extract_domain(<<"example.com/">>, Ops)),
+     ?_assertEqual(<<"example.com">>, extract_domain(<<"example.com/index.html">>, Ops)),
+     ?_assertEqual(<<"example.com">>, extract_domain(<<"www.example.com">>, Ops)),
+     ?_assertEqual(<<"example.com">>, extract_domain(<<"http://example.com">>, Ops)),
+     ?_assertEqual(<<"example.com">>, extract_domain(<<"example.com">>, Ops))].
+
+extract_tld_test_() ->
+    {ok, Re} = re:compile(?TLD_RE),
+    Ops = [{tld_re, Re}],
+    [?_assertEqual(<<".org">>, extract_tld(<<"lol.org">>, Ops)),
+     ?_assertEqual(<<".com">>, extract_tld(<<"example.com">>, Ops))].
+
+tld_exists_test_() ->
+    [?_assertEqual(true, tld_exists(<<".com">>)),
+     ?_assertEqual(false, tld_exists(<<"com">>)),
+     ?_assertEqual(false, tld_exists(<<".l0l">>))].
+
+get_tld_url_test_() ->
+    [?_assertEqual(<<"whois.crsnic.net">>, get_tld_url(<<".com">>))].
+
 %% perform_test_() ->
 %%     [{"Connects",
 %%       ?setup(fun can_stop/0)},
