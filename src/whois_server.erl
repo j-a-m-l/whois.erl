@@ -68,13 +68,45 @@ process(Query, State) ->
     case check_tld(Tld) of
         true ->
             Url = get_tld_url(Tld),
-            Response = whois_request:perform(Url, Domain, State),
+            Response = request(Url, Domain, State),
             Parser = infer_parser(Tld),
             Parser:parse(Response);
         false ->
             %% TODO Reason
             stop()
     end.
+
+request(Url, Domain, Ops) when is_list(Url) ->
+    Port = proplists:get_value(port, Ops),
+    Timeout = proplists:get_value(timeout, Ops),
+
+    {ok, Binary} = file:read_file(list_to_binary(["../test/data/", Domain])),
+    {ok, binary_to_list(Binary)}.
+
+    %% send_timeout configures gen_tcp:send 
+    %% case gen_tcp:connect(Url, Port, [binary, {active, false}, {packet, 0}, {send_timeout, Timeout}], Timeout) of
+    %%     {ok, Socket} ->
+    %%         ok = gen_tcp:send(Socket, adapt_request(Domain)),
+    %%         Response = recv(Socket),
+    %%         ok = gen_tcp:close(Socket),
+    %%         {ok, Response};
+    %%     {error, Reason} ->
+    %%         {error, Reason}
+    %% end.
+
+recv(Sock) ->
+    recv(Sock, []).
+recv(Sock, Acc) ->
+    case gen_tcp:recv(Sock, 0) of
+        {ok, Data} ->
+            recv(Sock, [Data | Acc]);
+        {error, closed} ->
+            iolist_to_binary(lists:reverse(Acc))
+    end.
+
+adapt_request(Data) ->
+    %% adapt()
+    list_to_binary(Data).
 
 extract_domain(Query, State) ->
     extract_using_re(Query, State, domain_re).
@@ -178,6 +210,28 @@ infer_parser(Tld) ->
 %% 
 %% get_tld_url_test_() ->
 %%     [?_assertEqual(<<"whois.crsnic.net">>, get_tld_url(<<".com">>))].
+%% 
+%% perform_test_() ->
+%%     [{"Connects",
+%%       ?setup(fun can_stop/0)},
+%%      {"Closes the socket",
+%%       ?setup(fun can_stop/0)}].
+%% 
+%% adapt_request_test_() ->
+%%     [{"It appends the ASCII CR and ASCII LF characters to the query",
+%%       ?setup(fun adds_end_characters/0)},
+%%      {"",
+%%       ?setup(fun can_stop/0)}].
+%% 
+%% can_stop() ->
+%%     ?assert(erlang:is_process_alive(?MODULE)).
+%% 
+%% adds_end_characters() ->
+%%     ?assert(erlang:is_process_alive(?MODULE)).
+%% 
+%% perform_requests() ->
+%%     [?assertEqual("example.net", ?MODULE:request("Domain Name: EXAMPLE.NET")),
+%%      ?assertEqual("example.net", ?MODULE:request("Domain Name: Example.net"))].
 
 %% -endif.
 
