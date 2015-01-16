@@ -14,7 +14,7 @@
 
 %% TODO stricter
 -define(DOMAIN_RE, <<"^(?:.+://)?(?:.+\\.)?(\\w+\\.\\w+)(?:/.*)?$">>).
--define(TLD_RE, <<"^.+(\\.\\w+)$">>).
+-define(TLD_RE, <<"^.+\\.(\\w+)$">>).
 -define(DEFAULT_LOOKUP_TIMEOUT, 10000).
 
 %% Server API
@@ -34,8 +34,9 @@ lookup(Query, Timeout) when is_list(Query) ->
 lookup(Query, Timeout) when is_binary(Query), is_integer(Timeout) ->
     gen_server:call(?MODULE, {lookup, Query}, Timeout).
 
-%% TODO looking up with and without '='?
-%% TODO looking up raw queries?
+%% TODO looking up with and without '='? {precise}
+%% TODO sending formated queries?
+%% TODO sending raw queries?
 
 %% gen_server callbacks
 
@@ -82,7 +83,8 @@ search_domain(Domain, State) ->
             %% {ok, binary_to_list(Binary)};
 
             Url = get_tld_url(Tld),
-            Data = adapt_request(Domain),
+            Adapter = infer_adapter(Tld),
+            Data = Adapter:adapt(Domain),
             case request(Url, Data, State) of
                 {ok, Response} ->
                     Parser = infer_parser(Tld),
@@ -93,10 +95,6 @@ search_domain(Domain, State) ->
         false ->
             {error, unknown_tld}
     end.
-
-adapt_request(Data) ->
-    %% TODO
-    list_to_binary(Data).
 
 extract_domain(Query, State) ->
     extract_using_re(Query, State, domain_re).
@@ -122,9 +120,21 @@ get_tld_url(Tld, [{Tld, Url} | _]) ->
 get_tld_url(Tld, [_ | Tlds]) ->
     get_tld_url(Tld, Tlds).
 
+get_tld_adapter(Tld) ->
+    get_tld_adapter(Tld, ?TLDS).
+get_tld_adapter(Tld, [{Tld, _Url, Adapter} | _]) ->
+    Adapter;
+get_tld_adapter(Tld, [{Tld, _Url} | _]) ->
+    default;
+get_tld_adapter(Tld, [_ | Tlds]) ->
+    get_tld_adapter(Tld, Tlds).
+
 infer_parser(Tld) ->
-    %% list_to_existing_atom(string:concat("whois_", Tld, "_parser")).
-    list_to_atom(string:concat("whois_", Tld, "_parser")).
+    binary_to_atom(<<"whois_", Tld/binary, "_parser">>, latin1).
+
+infer_adapter(Tld) ->
+    Adapter = atom_to_binary(get_tld_adapter(Tld), latin1),
+    binary_to_atom(<<"whois_", Adapter/binary, "_adapter">>, latin1).
 
 %% case whois_server:request(binary_to_list(Url), Domain, merge_options(Ops)) of
 %%     {ok, Response} ->
@@ -203,6 +213,8 @@ recv(Sock, Acc) ->
 %%     [?assertEqual("example.net", ?MODULE:request("Domain Name: EXAMPLE.NET")),
 %%      ?assertEqual("example.net", ?MODULE:request("Domain Name: Example.net"))].
 
+%% Private API tests
+
 extract_domain_test_() ->
     {ok, Re} = re:compile(?DOMAIN_RE),
     Ops = [{domain_re, Re}],
@@ -215,16 +227,29 @@ extract_domain_test_() ->
 extract_tld_test_() ->
     {ok, Re} = re:compile(?TLD_RE),
     Ops = [{tld_re, Re}],
-    [?_assertEqual(<<".org">>, extract_tld(<<"lol.org">>, Ops)),
-     ?_assertEqual(<<".com">>, extract_tld(<<"example.com">>, Ops))].
+    [?_assertEqual(<<"org">>, extract_tld(<<"lol.org">>, Ops)),
+     ?_assertEqual(<<"com">>, extract_tld(<<"example.com">>, Ops))].
 
 tld_exists_test_() ->
-    [?_assertEqual(true, tld_exists(<<".com">>)),
-     ?_assertEqual(false, tld_exists(<<"com">>)),
-     ?_assertEqual(false, tld_exists(<<".l0l">>))].
+    [?_assertEqual(true, tld_exists(<<"com">>)),
+     ?_assertEqual(false, tld_exists(<<".com">>)),
+     ?_assertEqual(false, tld_exists(<<"l0l">>))].
 
 get_tld_url_test_() ->
-    [?_assertEqual(<<"whois.crsnic.net">>, get_tld_url(<<".com">>))].
+    [?_assertEqual(<<"whois.crsnic.net">>, get_tld_url(<<"com">>))].
+
+get_tld_adapter_test_() ->
+    [?_assertEqual(default, get_tld_adapter(<<"com">>)),
+     ?_assertEqual(verisign, get_tld_adapter(<<"name">>))].
+
+infer_parser_test_() ->
+    [?_assertEqual(whois_com_parser, infer_parser(<<"com">>)),
+     ?_assertEqual(whois_name_parser, infer_parser(<<"name">>))].
+
+infer_adapter_test_() ->
+    [?_assertEqual(whois_default_adapter, infer_adapter(<<"com">>)),
+     ?_assertEqual(whois_verisign_adapter, infer_adapter(<<"name">>)),
+     ?_assertEqual(whois_eunic_adapter, infer_adapter(<<"ua">>))].
 
 %% perform_test_() ->
 %%     [{"Connects",
