@@ -15,6 +15,7 @@
 %% TODO stricter
 -define(DOMAIN_RE, <<"^(?:.+://)?(?:.+\\.)?(\\w+\\.\\w+)(?:/.*)?$">>).
 -define(TLD_RE, <<"^.+\\.(\\w+)$">>).
+-define(WHOIS_PORT, 43).
 -define(DEFAULT_LOOKUP_TIMEOUT, 10000).
 
 %% Server API
@@ -43,7 +44,8 @@ lookup(Query, Timeout) when is_binary(Query), is_integer(Timeout) ->
 init(State) ->
     {ok, DomainRe} = re:compile(?DOMAIN_RE),
     {ok, TldRe} = re:compile(?TLD_RE),
-    {ok, [{domain_re, DomainRe} | [{tld_re, TldRe} | State]]}.
+    %% TODO timeout
+    {ok, [{port, ?WHOIS_PORT} | [{domain_re, DomainRe} | [{tld_re, TldRe} | State]]]}.
 
 handle_call({lookup, Query}, _From, State) ->
     Reply = process_query(Query, State),
@@ -136,20 +138,6 @@ infer_adapter(Tld) ->
     Adapter = atom_to_binary(get_tld_adapter(Tld), latin1),
     binary_to_atom(<<"whois_", Adapter/binary, "_adapter">>, latin1).
 
-%% case whois_server:request(binary_to_list(Url), Domain, merge_options(Ops)) of
-%%     {ok, Response} ->
-%%         response(Domain, Response, Ops);
-%%     {error, Reason} ->
-%%         {error, Reason}
-%% end.
-%% 
-%% response(_Domain, Response, _Ops) ->
-%%     Parsed = whois_parser:parse(Response),
-%%     whois_parser:stop(),
-%%     save(binary_to_list(_Domain), Response),
-%%     io:format("Response: ~s~n", [Response]),
-%%     io:format("Parsed: ~s~n", [Parsed]).
-%% 
 %% save(File, Data) ->
 %%     {ok, Fd} = file:open([?TEST_DATA_PATH | File], [raw, write]),
 %%     file:write(Fd, Data),
@@ -193,7 +181,7 @@ recv(Sock, Acc) ->
 %%      {"The server can be stopped",
 %%       ?setup(fun can_stop/0)}].
 %% 
-%% request_test_() ->
+%% lookup_test_() ->
 %%     [{"The server performs requests",
 %%       ?setup(fun perform_requests/0)},
 %%      {"The server parses responses",
@@ -204,14 +192,6 @@ recv(Sock, Acc) ->
 %% 
 %% can_stop() ->
 %%     ?assert(erlang:is_process_alive(?MODULE)).
-%% 
-%% perform_requests() ->
-%%     [?assertEqual("example.net", ?MODULE:request("Domain Name: EXAMPLE.NET")),
-%%      ?assertEqual("example.net", ?MODULE:request("Domain Name: Example.net"))].
-%% 
-%% parses_responses() ->
-%%     [?assertEqual("example.net", ?MODULE:request("Domain Name: EXAMPLE.NET")),
-%%      ?assertEqual("example.net", ?MODULE:request("Domain Name: Example.net"))].
 
 %% Private API tests
 
@@ -251,27 +231,11 @@ infer_adapter_test_() ->
      ?_assertEqual(whois_verisign_adapter, infer_adapter(<<"name">>)),
      ?_assertEqual(whois_eunic_adapter, infer_adapter(<<"ua">>))].
 
-%% perform_test_() ->
+%% lookup_process_query_test_() ->
 %%     [{"Connects",
 %%       ?setup(fun can_stop/0)},
 %%      {"Closes the socket",
 %%       ?setup(fun can_stop/0)}].
-%% 
-%% adapt_request_test_() ->
-%%     [{"It appends the ASCII CR and ASCII LF characters to the query",
-%%       ?setup(fun adds_end_characters/0)},
-%%      {"",
-%%       ?setup(fun can_stop/0)}].
-%% 
-%% can_stop() ->
-%%     ?assert(erlang:is_process_alive(?MODULE)).
-%% 
-%% adds_end_characters() ->
-%%     ?assert(erlang:is_process_alive(?MODULE)).
-%% 
-%% perform_requests() ->
-%%     [?assertEqual("example.net", ?MODULE:request("Domain Name: EXAMPLE.NET")),
-%%      ?assertEqual("example.net", ?MODULE:request("Domain Name: Example.net"))].
 
 %% -endif.
 
