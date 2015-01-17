@@ -20,7 +20,7 @@
         available = unknown :: atom()
        }).
 
-%% The TLD data
+%% The TLD data TODO
 -record(tld, {
         tld :: binary(),
         domain :: binary(),

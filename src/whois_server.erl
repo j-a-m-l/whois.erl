@@ -9,6 +9,8 @@
 
 %% Public interface
 -export([start_link/1, stop/0, lookup/1, lookup/2]).
+%% Development interface
+-export([start/1]).
 %% gen_server callbacks
 -export([init/1, terminate/2, handle_call/3, handle_cast/2]).
 
@@ -25,6 +27,11 @@ start_link(Ops) ->
 
 stop() ->
     gen_server:cast(?MODULE, stop).
+
+%% Server API for development purposes
+
+start(Ops) ->
+    gen_server:start({local, ?MODULE}, ?MODULE, Ops, []).
 
 %% Service API
 
@@ -45,7 +52,7 @@ init(State) ->
     {ok, DomainRe} = re:compile(?DOMAIN_RE),
     {ok, TldRe} = re:compile(?TLD_RE),
     %% TODO timeout
-    {ok, [{port, ?WHOIS_PORT} | [{domain_re, DomainRe} | [{tld_re, TldRe} | State]]]}.
+    {ok, [{timeout, ?DEFAULT_LOOKUP_TIMEOUT} | [{port, ?WHOIS_PORT} | [{domain_re, DomainRe} | [{tld_re, TldRe} | State]]]]}.
 
 handle_call({lookup, Query}, _From, State) ->
     Reply = process_query(Query, State),
@@ -70,10 +77,10 @@ terminate(_Reason, _State) ->
 %% TODO one process for each query?
 process_query(Query, State) ->
     case extract_domain(Query, State) of
-        {ok, Domain} ->
-            search_domain(Domain, State);
-        _ ->
-            {error, invalid_domain}
+        error ->
+            {error, invalid_domain, Query};
+        Domain ->
+            search_domain(Domain, State)
     end.
 
 search_domain(Domain, State) ->
@@ -106,8 +113,12 @@ extract_tld(Domain, State) ->
 
 extract_using_re(Data, State, Type) ->
     Re = proplists:get_value(Type, State),
-    {match, [Result]} = re:run(Data, Re, [{capture, [1], binary}]),
-    Result.
+    case re:run(Data, Re, [{capture, [1], binary}]) of
+        {match, [Result]} ->
+            Result;
+        _ ->
+            error
+    end.
 
 tld_exists(Tld) ->
     case proplists:get_value(Tld, ?TLDS) of
@@ -147,8 +158,8 @@ request(Url, Data, Ops) ->
     Port = proplists:get_value(port, Ops),
     Timeout = proplists:get_value(timeout, Ops),
 
-    %% send_timeout configures gen_tcp:send 
-    case gen_tcp:connect(Url, Port, [binary, {active, false}, {packet, 0}, {send_timeout, Timeout}], Timeout) of
+    %% send_timeout is the option that configures gen_tcp:send timeout
+    case gen_tcp:connect(binary_to_list(Url), Port, [binary, {active, false}, {packet, 0}, {send_timeout, Timeout}], Timeout) of
         {ok, Socket} ->
             ok = gen_tcp:send(Socket, Data),
             Response = recv(Socket),
@@ -198,7 +209,8 @@ recv(Sock, Acc) ->
 extract_domain_test_() ->
     {ok, Re} = re:compile(?DOMAIN_RE),
     Ops = [{domain_re, Re}],
-    [?_assertEqual(<<"example.com">>, extract_domain(<<"example.com/">>, Ops)),
+    [?_assertEqual(error, extract_domain(<<"example">>, Ops)),
+     ?_assertEqual(<<"example.com">>, extract_domain(<<"example.com/">>, Ops)),
      ?_assertEqual(<<"example.com">>, extract_domain(<<"example.com/index.html">>, Ops)),
      ?_assertEqual(<<"example.com">>, extract_domain(<<"www.example.com">>, Ops)),
      ?_assertEqual(<<"example.com">>, extract_domain(<<"http://example.com">>, Ops)),
@@ -207,7 +219,8 @@ extract_domain_test_() ->
 extract_tld_test_() ->
     {ok, Re} = re:compile(?TLD_RE),
     Ops = [{tld_re, Re}],
-    [?_assertEqual(<<"org">>, extract_tld(<<"lol.org">>, Ops)),
+    [?_assertEqual(error, extract_tld(<<"lol">>, Ops)),
+     ?_assertEqual(<<"org">>, extract_tld(<<"lol.org">>, Ops)),
      ?_assertEqual(<<"com">>, extract_tld(<<"example.com">>, Ops))].
 
 tld_exists_test_() ->

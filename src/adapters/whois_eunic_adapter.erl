@@ -7,12 +7,12 @@
 
 adapt(Domain) ->
     %% RFC 3912 indicates that the request must end with ASCII CR and ASCII LF
-    string:concat("=", Domain, "\r\n").
+    <<"=", Domain/binary, "\r\n">>.
 
--ifdef(TEST).
+%% -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 
-adapt_test() ->
-    [?assertEqual("»example.net\r\n", adapt("example.net"))].
+adapt_test_() ->
+    [?_assertEqual(<<"=example.ua\r\n">>, adapt(<<"example.ua">>))].
 
--endif.
+%% -endif.
