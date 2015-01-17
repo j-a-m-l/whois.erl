@@ -154,12 +154,14 @@ infer_adapter(Tld) ->
 %%     file:write(Fd, Data),
 %%     file:close(Fd). 
 
+request(Url, Data, Ops) when is_binary(Url) ->
+    request(binary_to_list(Url), Data, Ops).
 request(Url, Data, Ops) ->
     Port = proplists:get_value(port, Ops),
     Timeout = proplists:get_value(timeout, Ops),
 
     %% send_timeout is the option that configures gen_tcp:send timeout
-    case gen_tcp:connect(binary_to_list(Url), Port, [binary, {active, false}, {packet, 0}, {send_timeout, Timeout}], Timeout) of
+    case gen_tcp:connect(Url, Port, [binary, {active, false}, {packet, 0}, {send_timeout, Timeout}], Timeout) of
         {ok, Socket} ->
             ok = gen_tcp:send(Socket, Data),
             Response = recv(Socket),
