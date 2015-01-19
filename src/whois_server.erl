@@ -14,11 +14,15 @@
 %% gen_server callbacks
 -export([init/1, terminate/2, handle_call/3, handle_cast/2, handle_info/2, code_change/3]).
 
+%% Default options
+-define(DEFAULT_LOOKUP_TIMEOUT, 10000).
+
+%% TCP configuration
+-define(WHOIS_PORT, 43).
+
 %% TODO stricter
 -define(DOMAIN_RE, <<"^(?:.+://)?(?:.+\\.)?(\\w+\\.\\w+)(?:/.*)?$">>).
 -define(TLD_RE, <<"^.+\\.(\\w+)$">>).
--define(WHOIS_PORT, 43).
--define(DEFAULT_LOOKUP_TIMEOUT, 10000).
 
 %% Server API
 
@@ -56,7 +60,7 @@ lookup(Query, Timeout) when is_binary(Query), is_integer(Timeout) ->
 init(State) ->
     {ok, DomainRe} = re:compile(?DOMAIN_RE),
     {ok, TldRe} = re:compile(?TLD_RE),
-    %% TODO timeout
+    %% TODO merge timeout
     {ok, [{timeout, ?DEFAULT_LOOKUP_TIMEOUT} | [{port, ?WHOIS_PORT} | [{domain_re, DomainRe} | [{tld_re, TldRe} | State]]]]}.
 
 terminate(_Reason, _State) ->
