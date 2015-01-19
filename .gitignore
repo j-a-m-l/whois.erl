@@ -3,7 +3,7 @@ relx
 .*.plt
 _rel/
 ebin/
-**/*.beam
+src/**/*.beam
 deps/
 logs/
 .tmp/
