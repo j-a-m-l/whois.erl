@@ -15,8 +15,8 @@
 -export([extract/2, includes/2]).
 
 start() ->
-    ok.
-start(Ops) ->
+    start([]).
+start(_Ops) ->
     %% init(Ops).
     ok.
 
@@ -37,11 +37,11 @@ process(Data, Tld) when is_binary(Data) ->
     end.
 
 %% TODO log the data
-unknown(Data) ->
+unknown(_Data) ->
     ok.
 
-normalize(Name) ->
-    list_to_binary(string:to_lower(binary_to_list(Name))).
+%% normalize(Name) ->
+%%     list_to_binary(string:to_lower(binary_to_list(Name))).
 
 includes(Data, Needle) when is_list(Data) ->
     includes(list_to_binary(Data), Needle);
@@ -59,18 +59,13 @@ extract(Data, Re) ->
     {match, [Result]} = re:run(Data, CompiledRe, [{capture, [1], binary}]),
     Result.
 
-compile(Re) ->
-    {ok, CompiledRe} = re:compile(Re, [caseless, multiline, {newline, any}]),
-    CompiledRe.
+%% compile(Re) ->
+%%     {ok, CompiledRe} = re:compile(Re, [caseless, multiline, {newline, any}]),
+%%     CompiledRe.
 
-match(Data, CompiledRe, Matches) ->
-    {match, [Result]} = re:run(Data, CompiledRe, [{capture, Matches, binary}]),
-    Result.
-
-%% TODO
-log(Reason) ->
-    io:format("logged:~p~n", [Reason]),
-    Reason.
+%% match(Data, CompiledRe, Matches) ->
+%%     {match, [Result]} = re:run(Data, CompiledRe, [{capture, Matches, binary}]),
+%%     Result.
 
 %% -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
