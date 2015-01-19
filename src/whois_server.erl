@@ -12,7 +12,7 @@
 %% Development interface
 -export([start/1]).
 %% gen_server callbacks
--export([init/1, terminate/2, handle_call/3, handle_cast/2]).
+-export([init/1, terminate/2, handle_call/3, handle_cast/2, handle_info/2, code_change/3]).
 
 %% TODO stricter
 -define(DOMAIN_RE, <<"^(?:.+://)?(?:.+\\.)?(\\w+\\.\\w+)(?:/.*)?$">>).
@@ -54,6 +54,12 @@ init(State) ->
     %% TODO timeout
     {ok, [{timeout, ?DEFAULT_LOOKUP_TIMEOUT} | [{port, ?WHOIS_PORT} | [{domain_re, DomainRe} | [{tld_re, TldRe} | State]]]]}.
 
+terminate(_Reason, _State) ->
+    ok.
+
+code_change(_OldVsn, State, _) ->
+    {ok, State}.
+
 handle_call({lookup, Query}, _From, State) ->
     Reply = process_query(Query, State),
     io:format("Reply:~p~n", [Reply]),
@@ -63,14 +69,12 @@ handle_call(_Request, _From, State) ->
 
 handle_cast(stop, State) ->
     {stop, normal, State};
-handle_cast(_Request, State) ->
+handle_cast(_Msg, State) ->
     {noreply, State}.
 
-terminate(_Reason, _State) ->
-    ok.
-
-%% TODO
-%% code_change() ->
+handle_info(_Msg, State) ->
+    error_logger:error_msg("Unexpected function call in ~p~n", [whois_server]),
+    {noreply, State}.
 
 %% Private API
 
