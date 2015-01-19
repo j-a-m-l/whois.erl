@@ -155,7 +155,7 @@ infer_adapter(Tld) ->
 %%     file:close(Fd). 
 
 request(Url, Data, Ops) when is_binary(Url) ->
-    request(binary_to_list(Url), Data, Ops).
+    request(binary_to_list(Url), Data, Ops);
 request(Url, Data, Ops) ->
     Port = proplists:get_value(port, Ops),
     Timeout = proplists:get_value(timeout, Ops),

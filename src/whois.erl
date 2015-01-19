@@ -4,10 +4,10 @@
 
 -export([lookup/1, lookup/2]).
 
-%% -spec lookup(binary()) -> {ok, Response}.
+%% TODO -spec lookup(binary()) -> {ok, Response}.
 lookup(Domain) ->
     lookup(Domain, []).
-lookup(Domain, Ops) when is_list(Domain), is_list(Ops) ->
+lookup(Domain, Ops) when is_list(Domain) ->
     lookup(list_to_binary(Domain), Ops);
 lookup(Domain, Ops) when is_binary(Domain), is_list(Ops) ->
     whois_server:start_link(Ops),
