@@ -8,7 +8,7 @@
 -include_lib("../include/tlds.hrl").
 
 %% Public interface
--export([start_link/1, stop/0, lookup/1, lookup/2]).
+-export([start_link/0, start_link/1, stop/0, lookup/1, lookup/2]).
 %% Development interface
 -export([start/0, start/1]).
 %% gen_server callbacks
@@ -22,6 +22,9 @@
 
 %% Server API
 
+%% -spec start_link(Ops) -> {ok, pid()}.
+start_link() ->
+    start_link([]).
 start_link(Ops) ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, Ops, []).
 
@@ -59,7 +62,7 @@ init(State) ->
 terminate(_Reason, _State) ->
     ok.
 
-code_change(_OldVsn, State, _) ->
+code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 handle_call({lookup, Query}, _From, State) ->
@@ -71,10 +74,10 @@ handle_call(_Request, _From, State) ->
 
 handle_cast(stop, State) ->
     {stop, normal, State};
-handle_cast(_Msg, State) ->
+handle_cast(_Request, State) ->
     {noreply, State}.
 
-handle_info(_Msg, State) ->
+handle_info(_Info, State) ->
     error_logger:error_msg("Unexpected function call in ~p~n", [whois_server]),
     {noreply, State}.
 
