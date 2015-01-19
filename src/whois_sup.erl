@@ -10,7 +10,7 @@ start_link() ->
 
 init(_Ops) ->
     Procs = [
-         {whois,
+         {whois_server,
               {whois_server, start_link, []},
               permanent, 2000, worker, [whois_server]}
     ],
