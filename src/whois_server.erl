@@ -10,7 +10,7 @@
 %% Public interface
 -export([start_link/1, stop/0, lookup/1, lookup/2]).
 %% Development interface
--export([start/1]).
+-export([start/0, start/1]).
 %% gen_server callbacks
 -export([init/1, terminate/2, handle_call/3, handle_cast/2, handle_info/2, code_change/3]).
 
@@ -30,6 +30,8 @@ stop() ->
 
 %% Server API for development purposes
 
+start() ->
+    start([]).
 start(Ops) ->
     gen_server:start({local, ?MODULE}, ?MODULE, Ops, []).
 
