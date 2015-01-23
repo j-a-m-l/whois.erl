@@ -1,7 +1,7 @@
 %% @doc 
 %% TODO example.com and special domains
 -module(whois_parser).
--include_lib("../include/whois.hrl").
+-include_lib("../../include/whois_records.hrl").
 
 -export([process/2]).
 %% -export([behaviour_info/1]).

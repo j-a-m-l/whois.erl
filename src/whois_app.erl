@@ -6,7 +6,7 @@
 
 -spec start(_Type, _Args) -> {ok, pid()}.
 start(_Type, _Args) ->
-	whois_sup:start_link().
+	whois_server_sup:start_link().
 
 -spec stop(_State) -> ok.
 stop(_State) ->

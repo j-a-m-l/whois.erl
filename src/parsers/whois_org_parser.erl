@@ -1,7 +1,7 @@
 %% @doc 
 -module(whois_org_parser).
 
--include_lib("../include/whois.hrl").
+-include_lib("../include/whois_records.hrl").
 -behaviour(whois_parser).
 -export([parse/2]).
 

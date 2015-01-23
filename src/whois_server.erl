@@ -5,7 +5,7 @@
 -module(whois_server).
 -behaviour(gen_server).
 
--include_lib("../include/tlds.hrl").
+-include_lib("../include/tlds_records.hrl").
 
 %% Public interface
 -export([start_link/0, start_link/1, stop/0, lookup/1, lookup/2]).

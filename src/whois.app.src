@@ -4,9 +4,10 @@
 	{id, "git"},
 	{modules, [
        whois,
-       whois_server
+       whois_server,
+       whois_daemon
     ]},
-	{registered, [whois_server, whois_sup]},
+	{registered, [whois_server, whois_daemon, whois_server_sup, whois_daemon_sup]},
 	{applications, [
 		kernel,
 		stdlib
