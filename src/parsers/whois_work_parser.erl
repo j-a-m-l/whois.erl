@@ -1,5 +1,7 @@
+%% TODO
+
 %% @doc 
--module(whois_jobs_parser).
+-module(whois_work_parser).
 -behaviour(whois_parser).
 
 -include_lib("../include/whois_records.hrl").
@@ -10,19 +12,24 @@ parse(Domain, Data) ->
     Status = extract_status(Data),
     Available = case Status of
         available   -> true;
-        unavailable -> false;
         exists      -> false;
+        pending     -> false;
+        unavailable -> false;
         _           -> false
     end,
     #whois{domain = Domain, status = Status, available = Available}.
 
 extract_status(Data) ->
-    case whois_parser:includes(Data, <<"No match for \"">>) of
+    case whois_parser:includes(Data, <<"Status: Not Registered">>) of
         true -> available;
         false ->
-            case whois_parser:includes(Data, <<"Domain ID: ">>) of
-                true -> exists;
-                false -> unknown_status
+            case whois_parser:includes(Data, <<"Status: This domain name is still pending validation and/or contention resolution.">>) of
+                true -> pending;
+                false ->
+                    case whois_parser:includes(Data, <<"TODO TODO">>) of
+                        true -> exists;
+                        false -> unknown_status
+                    end
             end
     end.
 
@@ -36,7 +43,7 @@ stop() -> ok.
 -define(EXISTS_EXAMPLE, <<"google">>).
 -define(AVAILABLE_EXAMPLE, <<"asdf1234">>).
 -define(TEST_DATA_PATH, <<"test/data/">>).
--define(PARSER, <<"jobs">>).
+-define(PARSER, <<"work">>).
 
 test_data_for(Domain) when is_list(Domain) ->
     test_data_for(list_to_binary(Domain));

@@ -10,5 +10,6 @@
         {<<"net">>, <<"whois.crsnic.net">>},
         {<<"no">>, <<"whois.norid.no">>},
         {<<"org">>, <<"whois.publicinterestregistry.net">>},
-        {<<"ua">>, <<"whois.net.ua">>, eunic}.
+        {<<"ua">>, <<"whois.net.ua">>, eunic},
+        {<<"work">>, <<"whois-dub.mm-registry.com">>}
     ]).
