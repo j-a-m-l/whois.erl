@@ -2,11 +2,7 @@
 	{description, "An Erlang WHOIS library"},
 	{vsn, "0.2.0"},
 	{id, "git"},
-	{modules, [
-       whois,
-       whois_server,
-       whois_daemon
-    ]},
+	{modules, []},
 	{registered, [whois_server, whois_daemon, whois_server_sup, whois_daemon_sup]},
 	{applications, [
 		kernel,

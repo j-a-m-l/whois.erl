@@ -1,5 +1,5 @@
 %% @doc 
--module(whois_no_parser).
+-module(whois_es_parser).
 
 -include_lib("../include/whois_records.hrl").
 -behaviour(whois_parser).
@@ -32,7 +32,7 @@ stop() -> ok.
 -define(setup(F), {setup, fun() -> start() end, fun(_)-> stop() end, F}).
 
 -define(TEST_DATA_PATH, <<"test/data/">>).
--define(PARSER, <<"no">>).
+-define(PARSER, <<"es">>).
 
 test_data_for(Domain) when is_list(Domain) ->
     test_data_for(list_to_binary(Domain));
@@ -48,7 +48,7 @@ test_data_for(Domain) when is_binary(Domain) ->
 %% unavailable_test_() ->
 
 available_test_() ->
-    Domain = "example2.no",
+    Domain = "example2.es",
     Data = test_data_for(Domain),
     Result = parse(Domain, Data),
     [{"Returns the domain name",
@@ -59,7 +59,7 @@ available_test_() ->
       ?setup( fun() -> available_test(true, Result) end )}].
 
 exists_test_() ->
-    Domain = "google.no",
+    Domain = "google.es",
     Data = test_data_for(Domain),
     Result = parse(Domain, Data),
     [{"Returns the domain name",

@@ -162,11 +162,6 @@ infer_adapter(Tld) ->
     Adapter = atom_to_binary(get_tld_adapter(Tld), latin1),
     binary_to_atom(<<"whois_", Adapter/binary, "_adapter">>, latin1).
 
-%% save(File, Data) ->
-%%     {ok, Fd} = file:open([?TEST_DATA_PATH | File], [raw, write]),
-%%     file:write(Fd, Data),
-%%     file:close(Fd). 
-
 request(Url, Data, Ops) when is_binary(Url) ->
     request(binary_to_list(Url), Data, Ops);
 request(Url, Data, Ops) ->

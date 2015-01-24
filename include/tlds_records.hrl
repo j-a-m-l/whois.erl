@@ -2,6 +2,8 @@
         {<<"be">>, <<"whois.dns.be">>},
         {<<"br">>, <<"whois.nic.br">>},
         {<<"com">>, <<"whois.crsnic.net">>},
+        %% 10 per minute
+        %% {<<"es">>, <<"whois.nic.es">>, [{authorized_ip}, {limit, 10, 60}],
         {<<"mx">>, <<"whois.nic.mx">>},
         {<<"name">>, <<"whois.nic.name">>, verisign},
         {<<"net">>, <<"whois.crsnic.net">>},

@@ -1,3 +1,5 @@
+%% TODO
+
 %% @doc 
 -module(whois_org_parser).
 
@@ -24,31 +26,39 @@ extract_status(Data) ->
             end
     end.
 
-%% -ifdef(TEST).
+-ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 
 start() -> ok.
 stop() -> ok.
 -define(setup(F), {setup, fun() -> start() end, fun(_)-> stop() end, F}).
 
--define(TEST_DATA_PATH, "../test/data/").
--define(PARSER, "org").
-test_data_for(Domain) ->
-    {ok, Data} = file:read_file(list_to_binary([?TEST_DATA_PATH, ?PARSER, "/", Domain])),
-    Data.
+-define(TEST_DATA_PATH, <<"../test/data/">>).
+-define(PARSER, <<"org">>).
+
+test_data_for(Domain) when is_list(Domain) ->
+    test_data_for(list_to_binary(Domain));
+test_data_for(Domain) when is_binary(Domain) ->
+    File = filename:absname(<<?TEST_DATA_PATH/binary, ?PARSER/binary, "/", Domain/binary>>),
+    case file:read_file(File) of
+        {ok, Data} ->
+            Data;
+        _ ->
+            {error, file_not_found, File}
+    end.
 
 %% unavailable_test_() ->
 
-%% available_test_() ->
-%%     Domain = "example2.org",
-%%     Data = test_data_for(Domain),
-%%     Result = parse(Domain, Data),
-%%     [{"Returns the domain name",
-%%       ?setup( fun() -> domain_test(Domain, Result) end )},
-%%      {"Has an 'available' status",
-%%       ?setup( fun() -> status_test(available, Result) end )},
-%%      {"It's available",
-%%       ?setup( fun() -> available_test(true, Result) end )}].
+available_test_() ->
+    Domain = "example2.org",
+    Data = test_data_for(Domain),
+    Result = parse(Domain, Data),
+    [{"Returns the domain name",
+      ?setup( fun() -> domain_test(Domain, Result) end )},
+     {"Has an 'available' status",
+      ?setup( fun() -> status_test(available, Result) end )},
+     {"It's available",
+      ?setup( fun() -> available_test(true, Result) end )}].
 
 exists_test_() ->
     Domain = "google.org",
@@ -70,4 +80,4 @@ status_test(Expected, Result) ->
 available_test(Expected, Result) ->
     [?assertEqual(Expected, Result#whois.available)].
 
-%% -endif.
+-endif.
