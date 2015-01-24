@@ -6,6 +6,7 @@
 -behaviour(gen_server).
 
 -include_lib("../include/tlds_records.hrl").
+-include_lib("../include/whois_records.hrl").
 
 %% Public interface
 -export([start_link/0, start_link/1, stop/0, lookup/1, lookup/2]).
@@ -71,7 +72,6 @@ code_change(_OldVsn, State, _Extra) ->
 
 handle_call({lookup, Query}, _From, State) ->
     Reply = process_query(Query, State),
-    io:format("Reply:~p~n", [Reply]),
     {reply, Reply, State};
 handle_call(_Request, _From, State) ->
     {reply, ignore, State}.
@@ -110,7 +110,9 @@ search_domain(Domain, State) ->
             case request(Url, Data, State) of
                 {ok, Response} ->
                     Parser = infer_parser(Tld),
-                    Parser:parse(Response);
+                    Result = Parser:parse(Domain, Response),
+                    %% Add the unprocessed WHOIS response
+                    Result#whois{raw = Response};
                 {error, Reason} ->
                     {error, request, Reason}
             end;
@@ -215,6 +217,8 @@ recv(Sock, Acc) ->
 %%     ?assert(erlang:is_process_alive(?MODULE)).
 
 %% Private API tests
+
+%% TODO search domain adds the unprocessed WHOIS response
 
 extract_domain_test_() ->
     {ok, Re} = re:compile(?DOMAIN_RE),

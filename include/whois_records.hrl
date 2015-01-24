@@ -8,6 +8,10 @@
 
 %% The domain data extracted from WHOIS responses
 -record(whois, {
+        %% Raw WHOIS response
+        raw :: binary(),
+
+        %% Parsed fields
         domain :: binary(),
         registrar :: binary(),
         referral_url :: binary(),
@@ -16,6 +20,7 @@
         update_date :: binary(),
         creation_date :: binary(),
         expiration_date :: binary(),
+
         %% Inferred fields
         available = unknown :: atom()
        }).
