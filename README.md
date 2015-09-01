@@ -78,7 +78,7 @@ Tests
 
 Authors
 =======
-Juan Antonio Martín Lucas (https://github.com/noijd)
+Juan Antonio Martín Lucas (https://github.com/j-a-m-l)
 
 
 License

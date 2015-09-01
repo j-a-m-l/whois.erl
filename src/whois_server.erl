@@ -22,6 +22,7 @@
 -define(WHOIS_PORT, 43).
 
 %% TODO stricter
+%% TODO admit -
 -define(DOMAIN_RE, <<"^(?:.+://)?(?:.+\\.)?(\\w+\\.\\w+)(?:/.*)?$">>).
 -define(TLD_RE, <<"^.+\\.(\\w+)$">>).
 
