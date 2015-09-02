@@ -7,7 +7,7 @@ This project performs [WHOIS](https://en.wikipedia.org/wiki/Whois) requests.
 Notes
 -----
 
-This project is standing by while I developed others. Anyway, if you want to contribute, I will help you ;).
+This project is standing by while I am developing others. Anyway, if you want to contribute, I will help you ;).
 
 
 Requirements
